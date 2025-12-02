@@ -1,0 +1,106 @@
+/dts-v1/;
+#include "sf21h8898-siflower-one.dtsi"
+
+
+/ {
+	model = "Siflower One (Booting from NOR)";
+	compatible = "siflower,one-nor", "siflower,sf21h8898";
+
+	chosen {
+		stdout-path = "serial1:115200n8";
+		rootdisk = <&rootdisk>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+	num-cs = <2>;
+	cs-gpios = <&gpio 5 GPIO_ACTIVE_LOW>, <&gpio 36 GPIO_ACTIVE_LOW>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <35000000>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+	        partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x0 0x90000>;
+				read-only;
+			};
+
+			factory: partition@90000 {
+				label = "factory";
+				reg = <0x90000 0x10000>;
+			};
+
+			rootdisk: partition@a0000 {
+				label = "firmware";
+				reg = <0xa0000 0xf60000>;
+				compatible = "denx,fit";
+			};
+		};
+	};
+
+	flash@1 {
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <35000000>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+	        partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "fbl-nand";
+				reg = <0x0 0x20000>;
+			};
+
+			partition@20000 {
+				label = "ubi-nand";
+				reg = <0x20000 0x0>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+        reset-gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
+        reset-ms = <100>;
+        num-lanes = <1>;
+        lane-mode = <0>;
+        status = "okay";
+        pcie@0,0 {
+                reg = <0x0000 0 0 0 0>;
+                #address-cells = <3>;
+                #size-cells = <2>;
+
+                wifi@0,0 {
+                        reg = <0x0 0 0 0 0>;
+                        nvmem-cells = <&mtd_mac_address>, <&mtd_wifi_version>, <&mtd_wifi_info>, <&mtd_rssi_offset>, <&mtd_refpower>, <&mtd_calipower>;
+                        nvmem-cell-names = "mac-address", "wifi-version", "wifi-info", "rssi-offset", "refpower", "calipower";
+                        mac-address-increment = <2>;
+                };
+
+                wifi@0,1 {
+                        reg = <0x100 0 0 0 0>;
+                        nvmem-cells = <&mtd_mac_address>, <&mtd_wifi_version>, <&mtd_wifi_info>, <&mtd_rssi_offset>, <&mtd_refpower>, <&mtd_calipower>;
+                        nvmem-cell-names = "mac-address", "wifi-version", "wifi-info", "rssi-offset", "refpower", "calipower";
+                        mac-address-increment = <6>;
+                };
+        };
+};
+#include "sf21a6826-factory.dtsi"
